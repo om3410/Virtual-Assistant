@@ -1,0 +1,123 @@
+let btn = document.querySelector("#btn");
+let content = document.querySelector("#content");
+let voice = document.querySelector("#voice");
+
+// Function to speak text
+function speak(text) {
+    let text_speak = new SpeechSynthesisUtterance(text);
+    let voices = window.speechSynthesis.getVoices();
+    let selectedVoice = voices.find(voice => voice.name === "Google UK English Female");
+
+    if (selectedVoice) {
+        text_speak.voice = selectedVoice;
+    }
+
+    text_speak.rate = 1;
+    text_speak.pitch = 1;
+    text_speak.volume = 1;
+    text_speak.lang = "en-GB";
+    window.speechSynthesis.speak(text_speak);
+}
+
+// Ensure voices are loaded before speaking
+function loadVoices() {
+    return new Promise((resolve) => {
+        let voices = window.speechSynthesis.getVoices();
+        if (voices.length !== 0) {
+            resolve(voices);
+        } else {
+            window.speechSynthesis.onvoiceschanged = () => {
+                voices = window.speechSynthesis.getVoices();
+                resolve(voices);
+            };
+        }
+    });
+}
+
+loadVoices().then((voices) => {
+    speak("Hello I am your virtual assistant");
+});
+
+console.log(typeof speak);
+
+// Define the wishMe function
+function wishMe() {
+    let day = new Date();
+    let hours = day.getHours();
+    if (hours >= 0 && hours < 12) {
+        speak("Good Morning Sir");
+    } else if (hours >= 12 && hours < 16) {
+        speak("Good Afternoon Sir");
+    } else {
+        speak("Good Evening Sir");
+    }
+}
+
+// Call wishMe on window load
+window.addEventListener('load', () => {
+    wishMe();
+});
+
+// Check for SpeechRecognition API
+let recognition;
+let speechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+if (speechRecognition) {
+    recognition = new speechRecognition();
+    recognition.onresult = (event) => {
+        let currentIndex = event.resultIndex;
+        let transcript = event.results[currentIndex][0].transcript;
+        content.innerText = transcript;
+        takeCommand(transcript.toLowerCase());
+    };
+} else {
+    console.error("Speech Recognition API is not supported in this browser.");
+}
+
+// Event listener for the button click
+btn.addEventListener("click", () => {
+    if (recognition) {
+        recognition.start();
+    }
+    btn.style.display = "none";
+    voice.style.display = "block";
+});
+
+// Define the takeCommand function outside the block
+function takeCommand(message) {
+    btn.style.display = "flex";
+    voice.style.display = "none";
+    if (message.includes("hello") || message.includes("hey")) {
+        speak("hello sir, what can I help you with?");
+    } else if (message.includes("who are you") || message.includes("what is your name")) {
+        speak("I am a virtual assistant, created by Rewaskar Sir");
+    } else if (message.includes("open youtube")) {
+        speak("opening youtube....");
+        window.open("https://www.youtube.com/", "_blank");
+    } else if (message.includes("open google")) {
+        speak("opening google....");
+        window.open("https://www.google.com/", "_blank");
+    } else if (message.includes("open facebook")) {
+        speak("opening facebook....");
+        window.open("https://www.facebook.com/", "_blank");
+    } else if (message.includes("open instagram")) {
+        speak("opening instagram....");
+        window.open("https://www.instagram.com/", "_blank");
+    } else if (message.includes("open whatsapp")) {
+        speak("opening whatsapp....");
+        window.open("https://web.whatsapp.com/");
+    } else if (message.includes("open calculator")) {
+        speak("opening calculator....");
+        alert("Opening calculator is not supported directly.");
+    } else if (message.includes("time")) {
+        let time = new Date().toLocaleString(undefined, { hour: "numeric", minute: "numeric" });
+        speak(`The time is ${time}`);
+    } else if (message.includes("date")) {
+        let date = new Date().toLocaleString(undefined, { day: "numeric", month: "short", year: "numeric" });
+        speak(`The date is ${date}`);
+    } else {
+        let finalText = `This is what I found on the internet regarding ` + message.replace("sipra", "").replace("shifra", "");
+        speak(finalText);
+        window.open(`https://www.bing.com/search?q=${encodeURIComponent(message.replace("shifra", "").replace("sipra", ""))}`);
+    }
+}
